@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Bob's Baked Co. — Task Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0f0e0d;
+  --surface:#1a1917;
+  --surface2:#242220;
+  --border:#2e2b28;
+  --border2:#3d3a36;
+  --text:#f0ede8;
+  --text2:#9a9590;
+  --text3:#5a5650;
+  --green:#4ade80;
+  --green-dim:#1a3a26;
+  --green-text:#86efac;
+  --amber:#fbbf24;
+  --amber-dim:#3a2d10;
+  --red:#f87171;
+  --red-dim:#3a1a1a;
+  --red-text:#fca5a5;
+  --blue:#60a5fa;
+  --blue-dim:#1a2a3a;
+  --purple:#a78bfa;
+  --purple-dim:#2a1a3a;
+  --pink:#f472b6;
+  --pink-dim:#3a1a2a;
+  --teal:#2dd4bf;
+  --teal-dim:#0f2a28;
+  --r:12px;
+  --r-sm:8px;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;min-height:100vh}
+body{padding-bottom:80px}
+
+.app-header{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:14px 16px 10px;
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-icon{font-size:22px}
+.brand-name{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--text2);font-weight:400}
+.save-dot{width:7px;height:7px;border-radius:50%;background:var(--green);transition:background .3s}
+.save-dot.saving{background:var(--amber)}
+.save-dot.err{background:var(--red)}
+
+.nav-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.nav-scroll::-webkit-scrollbar{display:none}
+.ntab{
+  flex-shrink:0;font-size:12px;font-weight:500;padding:6px 14px;
+  border:1px solid var(--border2);border-radius:20px;
+  background:transparent;color:var(--text2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:var(--font);
+}
+.ntab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.ntab:active{transform:scale(.96)}
+
+.view{display:none;padding:14px 14px 0}
+.view.on{display:block}
+
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.mc-lbl{font-size:11px;color:var(--text2);margin-bottom:2px}
+.mc-val{font-size:22px;font-weight:600;line-height:1.2}
+.mc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+.xpw{margin-bottom:14px}
+.xprow{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px}
+.xpbar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.xpfill{height:100%;background:var(--green);border-radius:3px;transition:width .5s ease}
+
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.section-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+.penalty-badge{font-size:10px;color:var(--red);background:var(--red-dim);padding:2px 8px;border-radius:20px}
+
+.tasks{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+
+.tc{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px 14px;
+  display:flex;align-items:flex-start;gap:10px;
+  transition:border-color .15s,opacity .2s;
+  cursor:default;
+}
+.tc.overdue{border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0}
+.tc.warn{border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0}
+.tc.done{opacity:.45}
+.tc.done .tt{text-decoration:line-through;color:var(--text2)}
+
+.chk{
+  width:22px;height:22px;border-radius:50%;
+  border:1.5px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;cursor:pointer;
+  transition:all .15s;font-size:12px;color:transparent;
+  background:transparent;
+}
+.chk:active{transform:scale(.88)}
+.chk.on{background:var(--green);border-color:var(--green);color:#000}
+
+.tb{flex:1;min-width:0}
+.tt{font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.35;color:var(--text)}
+.tmeta{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.ph{background:var(--red-dim);color:var(--red-text)}
+.pm{background:var(--amber-dim);color:var(--amber)}
+.pl{background:var(--green-dim);color:var(--green-text)}
+.bc{background:var(--surface2);color:var(--text2)}
+.bfreq{background:var(--purple-dim);color:var(--purple)}
+.rev-pratik{background:var(--blue-dim);color:var(--blue);font-size:10px;padding:2px 7px;border-radius:20px}
+.rev-roshan{background:var(--amber-dim);color:var(--amber);font-size:10px;padding:2px 7px;border-radius:20px}
+.rev-lagna{background:var(--pink-dim);color:var(--pink);font-size:10px;padding:2px 7px;border-radius:20px}
+.rev-swati{background:#2a1e18;color:#fb923c;font-size:10px;padding:2px 7px;border-radius:20px}
+
+.due-txt{font-size:11px;color:var(--text3)}
+.due-od{color:var(--red);font-weight:500}
+.pts-lbl{font-size:11px;font-weight:600;margin-left:auto;padding-left:6px;white-space:nowrap}
+.pts-earn{color:var(--green)}
+.pts-pen{color:var(--red)}
+.pts-pend{color:var(--text3)}
+
+.mhdr{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;margin-bottom:12px;
+}
+.mhdr-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.av{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;flex-shrink:0;
+}
+.mname{font-size:16px;font-weight:600;color:var(--text)}
+.mrole{font-size:11px;color:var(--text2);margin-top:1px;line-height:1.4}
+.mreports{font-size:10px;color:var(--text3);margin-top:2px}
+.mstats{display:flex;gap:0;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
+.ms{flex:1;text-align:center;padding:0 8px}
+.ms+.ms{border-left:1px solid var(--border)}
+.ms-val{font-size:18px;font-weight:600;color:var(--text)}
+.ms-lbl{font-size:10px;color:var(--text3);margin-top:1px}
+
+.view-toggle{display:flex;gap:6px;margin-bottom:12px}
+.vtab{
+  font-size:12px;font-weight:500;padding:6px 14px;
+  border:1px solid var(--border2);border-radius:20px;
+  background:transparent;color:var(--text2);cursor:pointer;
+  font-family:var(--font);transition:all .15s;
+}
+.vtab.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.vtab:active{transform:scale(.96)}
+
+.add-btn{
+  margin-left:auto;font-size:12px;font-weight:500;padding:6px 12px;
+  border:1px solid var(--border2);border-radius:20px;
+  background:transparent;color:var(--text2);cursor:pointer;
+  font-family:var(--font);display:flex;align-items:center;gap:4px;
+}
+.add-btn:active{transform:scale(.96)}
+
+.add-form{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;margin-bottom:10px;
+}
+.add-form input,.add-form select{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:10px 12px;color:var(--text);
+  font-family:var(--font);font-size:13px;margin-bottom:8px;
+  appearance:none;-webkit-appearance:none;
+}
+.add-form input::placeholder{color:var(--text3)}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.frow2 select,.frow2 input{margin-bottom:0}
+.faction{display:flex;gap:8px;margin-top:8px}
+.btn-save{
+  flex:1;background:var(--green);color:#000;font-weight:600;
+  border:none;border-radius:var(--r-sm);padding:11px;
+  font-family:var(--font);font-size:13px;cursor:pointer;
+}
+.btn-save:active{transform:scale(.97)}
+.btn-cancel{
+  background:var(--surface2);color:var(--text2);font-weight:500;
+  border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 16px;
+  font-family:var(--font);font-size:13px;cursor:pointer;
+}
+
+.member-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px 14px;
+  display:flex;align-items:center;gap:10px;margin-bottom:6px;
+}
+.mr-info{flex:1;min-width:0}
+.mr-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.mr-reports{font-size:10px;color:var(--text3);margin-bottom:4px}
+.mr-meta{display:flex;align-items:center;gap:6px}
+.mr-bar{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;flex:1;max-width:80px}
+.mr-fill{height:100%;background:var(--green);border-radius:2px}
+.mr-pts{font-size:12px;font-weight:600;color:var(--green);white-space:nowrap}
+
+.wa-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;margin-bottom:10px;
+}
+.wa-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.wa-label{font-size:12px;font-weight:600;color:var(--text)}
+.wa-sub{font-size:11px;color:var(--text3);margin-bottom:8px}
+.wa-copy{
+  background:var(--green);color:#000;font-weight:600;
+  border:none;border-radius:20px;padding:6px 14px;
+  font-family:var(--font);font-size:12px;cursor:pointer;flex-shrink:0;
+}
+.wa-copy:active{transform:scale(.96)}
+.wa-msg{
+  font-family:var(--mono);font-size:12px;color:var(--text2);
+  line-height:1.7;white-space:pre-wrap;
+  background:var(--surface2);border-radius:var(--r-sm);
+  padding:12px;border:1px solid var(--border);
+  max-height:280px;overflow-y:auto;
+}
+
+.info-box{
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--surface2);border-radius:var(--r-sm);
+  padding:10px 12px;margin-bottom:12px;font-size:12px;
+  color:var(--text2);line-height:1.5;border:1px solid var(--border);
+}
+.info-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+
+.empty{text-align:center;padding:24px 16px;color:var(--text3);font-size:13px}
+
+.toast-wrap{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  z-index:999;pointer-events:none;
+}
+.toast{
+  background:var(--green);color:#000;font-weight:600;
+  padding:10px 20px;border-radius:24px;font-size:13px;
+  white-space:nowrap;
+  opacity:0;transform:translateY(8px);
+  transition:opacity .25s,transform .25s;
+}
+.toast.on{opacity:1;transform:translateY(0)}
+
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg);border-top:1px solid var(--border);
+  display:flex;overflow-x:auto;scrollbar-width:none;
+  padding:6px 8px 10px;gap:4px;z-index:100;
+}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bnav{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+  gap:2px;padding:6px 10px;border-radius:10px;cursor:pointer;
+  background:transparent;border:none;font-family:var(--font);
+  transition:background .15s;
+}
+.bnav.active{background:var(--surface2)}
+.bnav-icon{font-size:18px;line-height:1}
+.bnav-lbl{font-size:10px;color:var(--text2);font-weight:500;white-space:nowrap}
+.bnav.active .bnav-lbl{color:var(--text)}
+
+.od-label{font-size:11px;font-weight:600;color:var(--red)}
+
+@media(min-width:520px){
+  .view{padding:16px 20px 0}
+  .metrics{grid-template-columns:repeat(4,1fr)}
+  .mstats{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <div class="brand">
+      <span class="brand-icon">🍞</span>
+      <div>
+        <div class="brand-name">Bob's Baked Co.</div>
+        <div class="brand-sub">Task Master</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="save-dot" id="sdot" title="Save status"></div>
+      <span style="font-size:11px;color:var(--text3)" id="slbl">Loading…</span>
+    </div>
+  </div>
+  <div class="nav-scroll" id="top-nav" style="display:none">
+    <button class="ntab active" onclick="gv('overview',this)">Overview</button>
+    <button class="ntab" onclick="gv('roshan',this)">Roshan</button>
+    <button class="ntab" onclick="gv('chinmaya',this)">Chinmaya</button>
+    <button class="ntab" onclick="gv('lagna',this)">Lagna</button>
+    <button class="ntab" onclick="gv('preeti',this)">Preeti</button>
+    <button class="ntab" onclick="gv('kiran',this)">Kiran</button>
+    <button class="ntab" onclick="gv('swati',this)">Swati</button>
+    <button class="ntab" onclick="gv('pratik',this)">Pratik</button>
+    <button class="ntab" onclick="gv('whatsapp',this)">WhatsApp</button>
+  </div>
+</div>
+
+<div id="v-overview" class="view on"></div>
+<div id="v-roshan" class="view"></div>
+<div id="v-chinmaya" class="view"></div>
+<div id="v-lagna" class="view"></div>
+<div id="v-preeti" class="view"></div>
+<div id="v-kiran" class="view"></div>
+<div id="v-swati" class="view"></div>
+<div id="v-pratik" class="view"></div>
+<div id="v-whatsapp" class="view"></div>
+
+<div class="toast-wrap"><div class="toast" id="toast"></div></div>
+
+<div class="bottom-nav">
+  <button class="bnav active" onclick="gv('overview',null,this)"><span class="bnav-icon">📊</span><span class="bnav-lbl">Overview</span></button>
+  <button class="bnav" onclick="gv('roshan',null,this)"><span class="bnav-icon">🔵</span><span class="bnav-lbl">Roshan</span></button>
+  <button class="bnav" onclick="gv('chinmaya',null,this)"><span class="bnav-icon">🟣</span><span class="bnav-lbl">Chinmaya</span></button>
+  <button class="bnav" onclick="gv('lagna',null,this)"><span class="bnav-icon">🩷</span><span class="bnav-lbl">Lagna</span></button>
+  <button class="bnav" onclick="gv('preeti',null,this)"><span class="bnav-icon">🟢</span><span class="bnav-lbl">Preeti</span></button>
+  <button class="bnav" onclick="gv('kiran',null,this)"><span class="bnav-icon">🟠</span><span class="bnav-lbl">Kiran</span></button>
+  <button class="bnav" onclick="gv('swati',null,this)"><span class="bnav-icon">🔶</span><span class="bnav-lbl">Swati</span></button>
+  <button class="bnav" onclick="gv('pratik',null,this)"><span class="bnav-icon">⚫</span><span class="bnav-lbl">Pratik</span></button>
+  <button class="bnav" onclick="gv('whatsapp',null,this)"><span class="bnav-icon">💬</span><span class="bnav-lbl">WhatsApp</span></button>
+</div>
+
+<script>
+const MEMBERS=[
+  {id:'roshan',name:'Roshan',initials:'RO',color:'#1a2a3a',textColor:'#60a5fa',roles:'Operations · Procurement · Sales · MIS · Inventory · Events'},
+  {id:'chinmaya',name:'Chinmaya',initials:'CH',color:'#2a1a3a',textColor:'#a78bfa',roles:'Procurement · Kitchen & Ops · Order Management',reportsTo:['roshan','pratik']},
+  {id:'lagna',name:'Lagna Celina',initials:'LC',color:'#3a1a2a',textColor:'#f472b6',roles:'Social Media · Content · HR · Hiring · Process'},
+  {id:'preeti',name:'Preeti',initials:'PR',color:'#0f2a28',textColor:'#2dd4bf',roles:'Comms · CRM · Business Development · B2B'},
+  {id:'kiran',name:'Kiran',initials:'KI',color:'#3a2d10',textColor:'#fbbf24',roles:'Marketing & Social Media Intern',reportsTo:['lagna']},
+  {id:'swati',name:'Swati',initials:'SW',color:'#2a1e18',textColor:'#fb923c',roles:'Co-Founder · Strategy · Execution · Task Master'},
+  {id:'pratik',name:'Pratik',initials:'PK',color:'#1e1e1e',textColor:'#9a9590',roles:'Founder · Finance · Product · Strategy'},
+];
+
+const D=new Date();
+function dPlus(n){const t=new Date(D);t.setDate(t.getDate()+n);return t.toISOString().split('T')[0]}
+function fmtD(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
+function isOD(d){return d&&new Date(d+'T00:00:00')<D}
+function isUr(d){if(!d)return false;const diff=(new Date(d+'T00:00:00')-D)/864e5;return diff>=0&&diff<=2}
+
+const SEED=[
+  {id:1,m:'roshan',title:'Daily sales entry',cat:'Sales',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:2,m:'roshan',title:'Daily expense entry',cat:'Finance',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:3,m:'roshan',title:'Inventory stock check',cat:'Inventory',pri:'high',due:dPlus(1),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:4,m:'roshan',title:'Weekly MIS report',cat:'MIS',pri:'high',due:dPlus(4),pts:30,freq:'weekly',reviewedBy:'pratik'},
+  {id:5,m:'roshan',title:'Procurement reorder check',cat:'Procurement',pri:'medium',due:dPlus(2),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:6,m:'roshan',title:'Event/catering ops follow-up',cat:'Events',pri:'medium',due:dPlus(3),pts:20,freq:'weekly',reviewedBy:'swati'},
+  {id:7,m:'roshan',title:'Monthly MIS report',cat:'MIS',pri:'high',due:dPlus(18),pts:60,freq:'monthly',reviewedBy:'pratik'},
+  {id:8,m:'roshan',title:'Vendor payment reconciliation',cat:'Finance',pri:'medium',due:dPlus(10),pts:20,freq:'monthly',reviewedBy:'pratik'},
+  {id:9,m:'roshan',title:'Chinmaya daily ops check-in',cat:'Oversight',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:50,m:'chinmaya',title:'Morning kitchen readiness check',cat:'Kitchen',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'roshan'},
+  {id:51,m:'chinmaya',title:'Order status update — all pending orders',cat:'Orders',pri:'high',due:dPlus(0),pts:15,freq:'daily',reviewedBy:'roshan'},
+  {id:52,m:'chinmaya',title:'Raw material availability check',cat:'Procurement',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'roshan'},
+  {id:53,m:'chinmaya',title:'EOD ops summary to Roshan',cat:'Ops',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'roshan'},
+  {id:54,m:'chinmaya',title:'Vendor follow-up — pending deliveries',cat:'Procurement',pri:'high',due:dPlus(1),pts:20,freq:'weekly',reviewedBy:'roshan'},
+  {id:55,m:'chinmaya',title:'Weekly procurement order placement',cat:'Procurement',pri:'high',due:dPlus(2),pts:25,freq:'weekly',reviewedBy:'roshan'},
+  {id:56,m:'chinmaya',title:'Kitchen team performance check',cat:'Kitchen',pri:'medium',due:dPlus(3),pts:20,freq:'weekly',reviewedBy:'roshan'},
+  {id:57,m:'chinmaya',title:'Order fulfilment rate report',cat:'Orders',pri:'high',due:dPlus(4),pts:25,freq:'weekly',reviewedBy:'pratik'},
+  {id:58,m:'chinmaya',title:'Ops bottleneck flagging to Pratik',cat:'Ops',pri:'medium',due:dPlus(4),pts:20,freq:'weekly',reviewedBy:'pratik'},
+  {id:59,m:'chinmaya',title:'Monthly procurement cost summary',cat:'Procurement',pri:'high',due:dPlus(18),pts:40,freq:'monthly',reviewedBy:'pratik'},
+  {id:60,m:'chinmaya',title:'Kitchen SOP compliance review',cat:'Kitchen',pri:'medium',due:dPlus(18),pts:30,freq:'monthly',reviewedBy:'pratik'},
+  {id:61,m:'chinmaya',title:'Inventory vs order demand reconciliation',cat:'Orders',pri:'high',due:dPlus(14),pts:35,freq:'monthly',reviewedBy:'pratik'},
+  {id:10,m:'lagna',title:'Daily social post (IG + FB)',cat:'Social',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:11,m:'lagna',title:'Content calendar update',cat:'Content',pri:'high',due:dPlus(2),pts:20,freq:'weekly',reviewedBy:'swati'},
+  {id:12,m:'lagna',title:'Intern work review & feedback',cat:'HR',pri:'medium',due:dPlus(3),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:13,m:'lagna',title:'Hiring pipeline update',cat:'Hiring',pri:'medium',due:dPlus(4),pts:20,freq:'weekly',reviewedBy:'swati'},
+  {id:14,m:'lagna',title:'SOP/process doc update',cat:'Process',pri:'low',due:dPlus(12),pts:25,freq:'monthly',reviewedBy:'pratik'},
+  {id:15,m:'lagna',title:'Kitchen-ops coordination sync',cat:'Ops',pri:'high',due:dPlus(1),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:16,m:'lagna',title:'Kiran weekly output review',cat:'HR',pri:'medium',due:dPlus(4),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:17,m:'preeti',title:'Customer follow-up (calls/msgs)',cat:'CRM',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:18,m:'preeti',title:'B2B lead outreach — min 3',cat:'BizDev',pri:'high',due:dPlus(0),pts:20,freq:'daily',reviewedBy:'swati'},
+  {id:19,m:'preeti',title:'Internal comms digest',cat:'Comms',pri:'medium',due:dPlus(2),pts:15,freq:'weekly',reviewedBy:'swati'},
+  {id:20,m:'preeti',title:'B2B pipeline review & update',cat:'BizDev',pri:'high',due:dPlus(3),pts:25,freq:'weekly',reviewedBy:'pratik'},
+  {id:21,m:'preeti',title:'Customer retention report',cat:'CRM',pri:'medium',due:dPlus(10),pts:30,freq:'monthly',reviewedBy:'pratik'},
+  {id:22,m:'preeti',title:'Digital comms audit',cat:'Comms',pri:'low',due:dPlus(14),pts:20,freq:'monthly',reviewedBy:'swati'},
+  {id:23,m:'kiran',title:'Create 3 content pieces (reels/posts)',cat:'Content',pri:'high',due:dPlus(2),pts:20,freq:'weekly',reviewedBy:'lagna'},
+  {id:24,m:'kiran',title:'Engage with followers & comments',cat:'Social',pri:'medium',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'lagna'},
+  {id:25,m:'kiran',title:'Competitor social audit',cat:'Research',pri:'low',due:dPlus(5),pts:15,freq:'weekly',reviewedBy:'lagna'},
+  {id:26,m:'kiran',title:'Weekly content performance report',cat:'Analytics',pri:'medium',due:dPlus(4),pts:20,freq:'weekly',reviewedBy:'lagna'},
+  {id:27,m:'swati',title:'Daily team check-in (WhatsApp)',cat:'Oversight',pri:'high',due:dPlus(0),pts:10,freq:'daily',reviewedBy:'self'},
+  {id:28,m:'swati',title:'Weekly task assignment — all members',cat:'Planning',pri:'high',due:dPlus(1),pts:20,freq:'weekly',reviewedBy:'pratik'},
+  {id:29,m:'swati',title:'Social media strategy review',cat:'Marketing',pri:'high',due:dPlus(3),pts:25,freq:'weekly',reviewedBy:'pratik'},
+  {id:30,m:'swati',title:'Core team 1-on-1s',cat:'HR',pri:'medium',due:dPlus(5),pts:20,freq:'weekly',reviewedBy:'pratik'},
+  {id:31,m:'swati',title:'OKR/goal review',cat:'Strategy',pri:'high',due:dPlus(18),pts:40,freq:'monthly',reviewedBy:'pratik'},
+  {id:32,m:'swati',title:'Marketing campaign brief',cat:'Marketing',pri:'medium',due:dPlus(2),pts:20,freq:'weekly',reviewedBy:'self'},
+  {id:33,m:'pratik',title:'Finance snapshot review',cat:'Finance',pri:'high',due:dPlus(2),pts:20,freq:'weekly',reviewedBy:'self'},
+  {id:34,m:'pratik',title:'New biz development outreach',cat:'BizDev',pri:'high',due:dPlus(2),pts:25,freq:'weekly',reviewedBy:'self'},
+  {id:35,m:'pratik',title:'Product development check-in',cat:'Product',pri:'medium',due:dPlus(4),pts:20,freq:'weekly',reviewedBy:'self'},
+  {id:36,m:'pratik',title:'Operations strategic review',cat:'Ops',pri:'medium',due:dPlus(7),pts:30,freq:'monthly',reviewedBy:'self'},
+  {id:37,m:'pratik',title:'Monthly P&L review',cat:'Finance',pri:'high',due:dPlus(18),pts:50,freq:'monthly',reviewedBy:'self'},
+  {id:38,m:'pratik',title:'Chinmaya ops report review',cat:'Oversight',pri:'high',due:dPlus(4),pts:15,freq:'weekly',reviewedBy:'self'},
+];
+
+let tasks=[];
+let NID=600;
+let modeState={};
+let curView='overview';
+let saveTimer=null;
+
+const STORE_KEY='bbc-taskmaster-v1';
+
+function setStat(state,msg){
+  const dot=document.getElementById('sdot');
+  const lbl=document.getElementById('slbl');
+  if(!dot||!lbl)return;
+  dot.className='save-dot'+(state==='saving'?' saving':state==='err'?' err':'');
+  lbl.textContent=msg;
+}
+
+function loadState(){
+  setStat('saving','Loading…');
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(raw){
+      const saved=JSON.parse(raw);
+      tasks=SEED.map(s=>{
+        const sv=saved.tasks&&saved.tasks.find(x=>x.id===s.id);
+        return{...s,done:sv?!!sv.done:false};
+      });
+      const extras=(saved.tasks||[]).filter(t=>t.id>=600);
+      extras.forEach(e=>{if(!tasks.find(t=>t.id===e.id))tasks.push({...e});});
+      if(extras.length)NID=Math.max(600,...extras.map(e=>e.id))+1;
+      setStat('ok','Saved ✓');
+    } else {
+      tasks=SEED.map(s=>({...s,done:false}));
+      setStat('ok','Ready');
+    }
+  } catch(e){
+    tasks=SEED.map(s=>({...s,done:false}));
+    setStat('err','Load error');
+  }
+  document.getElementById('top-nav').style.display='flex';
+  render(curView);
+}
+
+function saveState(){
+  setStat('saving','Saving…');
+  try{
+    const payload={tasks:tasks.map(t=>({id:t.id,done:t.done,m:t.m,title:t.title,cat:t.cat,pri:t.pri,due:t.due,pts:t.pts,freq:t.freq||null,reviewedBy:t.reviewedBy}))};
+    localStorage.setItem(STORE_KEY,JSON.stringify(payload));
+    setStat('ok','Saved ✓');
+  } catch(e){
+    setStat('err','Save failed');
+  }
+}
+
+function scheduleSave(){
+  if(saveTimer)clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveState,500);
+}
+
+function mt(mid){return tasks.filter(t=>t.m===mid)}
+function earnedPts(mid){return tasks.filter(t=>t.m===mid&&t.done).reduce((a,t)=>a+t.pts,0)}
+function maxPts(mid){return tasks.filter(t=>t.m===mid).reduce((a,t)=>a+t.pts,0)}
+function penaltyPts(mid){return tasks.filter(t=>t.m===mid&&!t.done&&isOD(t.due)).length*5}
+function netPts(mid){return Math.max(0,earnedPts(mid)-penaltyPts(mid))}
+function streak(mid){return tasks.filter(t=>t.m===mid&&t.done&&t.freq==='daily').length}
+
+let toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('on');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('on'),2000);
+}
+
+function toggleTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.done=!t.done;
+  toast(t.done?'+'+t.pts+' pts! 🎉':'Unmarked');
+  scheduleSave();
+  render(curView);
+}
+
+function gv(v,topBtn,botBtn){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bnav').forEach(el=>el.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('on');
+  if(topBtn)topBtn.classList.add('active');
+  if(botBtn)botBtn.classList.add('active');
+  if(!topBtn&&!botBtn){
+    document.querySelectorAll('.ntab').forEach(b=>{
+      if(b.textContent.toLowerCase().includes(v)||b.getAttribute('onclick').includes("'"+v+"'"))b.classList.add('active');
+    });
+  }
+  curView=v;render(v);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function render(v){
+  if(v==='overview')renderOV();
+  else if(v==='whatsapp')renderWA();
+  else renderM(v);
+}
+
+function revBadge(rb){
+  if(rb==='pratik')return'<span class="rev-pratik">Pratik reviews</span>';
+  if(rb==='roshan')return'<span class="rev-roshan">Roshan reviews</span>';
+  if(rb==='lagna')return'<span class="rev-lagna">Lagna reviews</span>';
+  if(rb==='swati')return'<span class="rev-swati">Swati reviews</span>';
+  if(rb==='self')return'';
+  const mem=MEMBERS.find(m=>m.id===rb);
+  return mem?`<span class="badge bc">${mem.name} reviews</span>`:'';
+}
+
+function tCard(t,showMem){
+  const od=!t.done&&isOD(t.due);
+  const ur=!t.done&&isUr(t.due)&&!od;
+  const priC=t.pri==='high'?'ph':t.pri==='medium'?'pm':'pl';
+  const mem=MEMBERS.find(m=>m.id===t.m);
+  const memBadge=showMem&&mem?`<span class="badge" style="background:${mem.color};color:${mem.textColor}">${mem.name}</span>`:'';
+  return`<div class="tc ${t.done?'done':''} ${od?'overdue':ur?'warn':''}">
+    <div class="chk ${t.done?'on':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+    <div class="tb">
+      <div class="tt">${t.title}</div>
+      <div class="tmeta">
+        <span class="badge ${priC}">${t.pri}</span>
+        <span class="badge bc">${t.cat}</span>
+        ${t.freq?`<span class="badge bfreq">${t.freq}</span>`:''}
+        ${memBadge}
+        ${revBadge(t.reviewedBy)}
+        ${t.due?`<span class="due-txt">${od?'<span class="due-od">Overdue · </span>':''}${fmtD(t.due)}</span>`:''}
+        <span class="pts-lbl ${t.done?'pts-earn':od?'pts-pen':'pts-pend'}">${t.done?'+'+t.pts+'pts':od?'−5pts':'+'+t.pts}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOV(){
+  const el=document.getElementById('v-overview');
+  const total=tasks.length,done=tasks.filter(t=>t.done).length;
+  const od=tasks.filter(t=>!t.done&&isOD(t.due)).length;
+  const teamPts=MEMBERS.reduce((a,m)=>a+netPts(m.id),0);
+  const teamMax=MEMBERS.reduce((a,m)=>a+maxPts(m.id),0);
+  const pct=teamMax>0?Math.round(teamPts/teamMax*100):0;
+
+  el.innerHTML=`
+    <div class="metrics">
+      <div class="mc"><div class="mc-lbl">Tasks total</div><div class="mc-val">${total}</div><div class="mc-sub">${done} completed</div></div>
+      <div class="mc"><div class="mc-lbl">Team points</div><div class="mc-val" style="color:var(--green)">${teamPts}</div><div class="mc-sub">of ${teamMax}</div></div>
+      <div class="mc"><div class="mc-lbl">Overdue</div><div class="mc-val" style="color:${od>0?'var(--red)':'var(--text)'}">${od}</div><div class="mc-sub">${od>0?'−'+od*5+' pts':'all good'}</div></div>
+      <div class="mc"><div class="mc-lbl">Progress</div><div class="mc-val">${pct}%</div><div class="mc-sub">this cycle</div></div>
+    </div>
+    <div class="xpw">
+      <div class="xprow"><span>Team completion</span><span>${teamPts} / ${teamMax} pts</span></div>
+      <div class="xpbar"><div class="xpfill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="section-hd"><span class="section-title">Team members</span></div>
+    ${MEMBERS.map(mem=>{
+      const np=netPts(mem.id),mx=maxPts(mem.id),pen=penaltyPts(mem.id),pc=mx>0?Math.round(np/mx*100):0;
+      const allT=mt(mem.id),doneC=allT.filter(t=>t.done).length;
+      return`<div class="member-row" onclick="gvMem('${mem.id}')" style="cursor:pointer">
+        <div class="av" style="background:${mem.color};color:${mem.textColor}">${mem.initials}</div>
+        <div class="mr-info">
+          <div class="mr-name">${mem.name}</div>
+          ${mem.reportsTo?`<div class="mr-reports">Reports to: ${mem.reportsTo.map(r=>MEMBERS.find(m=>m.id===r)?.name).join(' & ')}</div>`:''}
+          <div class="mr-meta">
+            <span class="badge bc">${doneC}/${allT.length}</span>
+            ${pen>0?`<span class="badge ph">−${pen}pts</span>`:''}
+            <div class="mr-bar"><div class="mr-fill" style="width:${pc}%"></div></div>
+            <span class="mr-pts">${np}pts</span>
+          </div>
+        </div>
+        <span style="color:var(--text3);font-size:16px">›</span>
+      </div>`;
+    }).join('')}
+    <div class="section-hd" style="margin-top:4px"><span class="section-title">Overdue flags</span><span class="penalty-badge">−5 pts each</span></div>
+    <div class="tasks">${(()=>{const f=tasks.filter(t=>!t.done&&isOD(t.due));return f.length?f.map(t=>tCard(t,true)).join(''):'<div class="empty">No overdue tasks 🎉</div>';})()}</div>
+  `;
+}
+
+function gvMem(mid){
+  const topBtn=document.querySelector(`#top-nav .ntab[onclick*="'${mid}'"]`);
+  const botBtn=document.querySelector(`.bottom-nav .bnav[onclick*="'${mid}'"]`);
+  gv(mid,topBtn,botBtn);
+}
+
+function renderM(mid){
+  const el=document.getElementById('v-'+mid);
+  if(!el)return;
+  const mem=MEMBERS.find(m=>m.id===mid);
+  const mode=modeState[mid]||'daily';
+  const np=netPts(mid),mx=maxPts(mid),pen=penaltyPts(mid),pc=mx>0?Math.round(np/mx*100):0;
+  const allT=mt(mid);
+  const daily=allT.filter(t=>t.freq==='daily');
+  const weekly=allT.filter(t=>t.freq==='weekly');
+  const monthly=allT.filter(t=>t.freq==='monthly');
+  const oneoff=allT.filter(t=>!t.freq);
+  const str=streak(mid);
+
+  const sortList=(list)=>[...list].sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    const pd={high:0,medium:1,low:2};return pd[a.pri]-pd[b.pri];
+  });
+  const showList=(list)=>list.length?sortList(list).map(t=>tCard(t,false)).join(''):'<div class="empty">No tasks here</div>';
+
+  const notes={
+    chinmaya:`<div class="info-box"><span class="info-icon">🔀</span><span>Day-to-day tasks reviewed by Roshan. Weekly and monthly outputs reviewed independently by Pratik.</span></div>`,
+    swati:`<div class="info-box"><span class="info-icon">👁</span><span>"Pratik reviews" tasks are verified by Pratik. Others are self-reported by Swati.</span></div>`,
+    kiran:`<div class="info-box"><span class="info-icon">✅</span><span>All of Kiran's tasks are reviewed and signed off by Lagna Celina before submission.</span></div>`,
+  };
+
+  el.innerHTML=`
+    <div class="mhdr">
+      <div class="mhdr-top">
+        <div class="av" style="background:${mem.color};color:${mem.textColor};width:44px;height:44px;font-size:14px">${mem.initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="mname">${mem.name}</div>
+          <div class="mrole">${mem.roles}</div>
+          ${mem.reportsTo?`<div class="mreports">Reports to: ${mem.reportsTo.map(r=>MEMBERS.find(m=>m.id===r)?.name).join(' & ')}</div>`:''}
+        </div>
+      </div>
+      <div class="xpw" style="margin-bottom:10px">
+        <div class="xprow"><span>Progress</span><span>${pc}% · ${np}${pen>0?' (−'+pen+')':''} pts</span></div>
+        <div class="xpbar"><div class="xpfill" style="width:${pc}%"></div></div>
+      </div>
+      <div class="mstats">
+        <div class="ms"><div class="ms-val">${allT.filter(t=>t.done).length}/${allT.length}</div><div class="ms-lbl">done</div></div>
+        <div class="ms"><div class="ms-val" style="color:var(--amber)">${str>0?'🔥'+str:'—'}</div><div class="ms-lbl">streak</div></div>
+        <div class="ms"><div class="ms-val" style="color:var(--green)">${np}</div><div class="ms-lbl">net pts</div></div>
+        ${pen>0?`<div class="ms"><div class="ms-val" style="color:var(--red)">−${pen}</div><div class="ms-lbl">penalty</div></div>`:''}
+      </div>
+    </div>
+    ${notes[mid]||''}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div class="view-toggle">
+        <button class="vtab ${mode==='daily'?'active':''}" onclick="setMode('${mid}','daily')">Daily</button>
+        <button class="vtab ${mode==='weekly'?'active':''}" onclick="setMode('${mid}','weekly')">Weekly</button>
+        <button class="vtab ${mode==='all'?'active':''}" onclick="setMode('${mid}','all')">All</button>
+      </div>
+      <button class="add-btn" onclick="toggleAF('${mid}')">+ Add</button>
+    </div>
+    <div id="af-${mid}" style="display:none">
+      <div class="add-form">
+        <input type="text" id="nt-${mid}" placeholder="Task title"/>
+        <div class="frow2" style="margin-bottom:8px">
+          <select id="np-${mid}"><option value="high">High priority</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+          <select id="nf-${mid}"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option><option value="">One-off</option></select>
+        </div>
+        <div class="frow2" style="margin-bottom:0">
+          <input type="date" id="nd-${mid}" style="margin-bottom:0"/>
+          <input type="number" id="npts-${mid}" placeholder="Points (20)" min="5" max="100" style="margin-bottom:0"/>
+        </div>
+        <div class="faction">
+          <button class="btn-save" onclick="addTask('${mid}')">Add Task</button>
+          <button class="btn-cancel" onclick="toggleAF('${mid}')">Cancel</button>
+        </div>
+      </div>
+    </div>
+    ${mode==='daily'?`
+      <div class="section-hd"><span class="section-title">Today's checklist</span><span style="font-size:11px;color:var(--text3)">${daily.filter(t=>t.done).length}/${daily.length} done</span></div>
+      <div class="tasks">${showList(daily)}</div>
+    `:mode==='weekly'?`
+      <div class="section-hd"><span class="section-title">This week</span><span style="font-size:11px;color:var(--text3)">${weekly.filter(t=>t.done).length}/${weekly.length}</span></div>
+      <div class="tasks">${showList(weekly)}</div>
+      ${monthly.length?`<div class="section-hd"><span class="section-title">This month</span></div><div class="tasks">${showList(monthly)}</div>`:''}
+    `:`
+      <div class="section-hd"><span class="section-title">Daily</span></div>
+      <div class="tasks">${showList(daily)}</div>
+      <div class="section-hd"><span class="section-title">Weekly</span></div>
+      <div class="tasks">${showList(weekly)}</div>
+      <div class="section-hd"><span class="section-title">Monthly</span></div>
+      <div class="tasks">${showList(monthly)}</div>
+      ${oneoff.length?`<div class="section-hd"><span class="section-title">One-off</span></div><div class="tasks">${showList(oneoff)}</div>`:''}
+    `}
+  `;
+}
+
+function setMode(mid,m){modeState[mid]=m;renderM(mid);}
+function toggleAF(mid){const el=document.getElementById('af-'+mid);el.style.display=el.style.display==='none'?'block':'none';}
+
+function addTask(mid){
+  const title=document.getElementById('nt-'+mid).value.trim();
+  if(!title){toast('Enter a title');return;}
+  const pri=document.getElementById('np-'+mid).value;
+  const due=document.getElementById('nd-'+mid).value||dPlus(7);
+  const freq=document.getElementById('nf-'+mid).value;
+  const pts=parseInt(document.getElementById('npts-'+mid).value)||20;
+  const defRev=mid==='kiran'?'lagna':mid==='chinmaya'?'roshan':mid==='pratik'?'self':'swati';
+  tasks.push({id:NID++,m:mid,title,cat:'General',pri,due,pts,done:false,freq:freq||null,reviewedBy:defRev});
+  toggleAF(mid);toast('Task added!');scheduleSave();renderM(mid);
+}
+
+function renderWA(){
+  const el=document.getElementById('v-whatsapp');
+  const today=D.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  const overdue=tasks.filter(t=>!t.done&&isOD(t.due));
+
+  const dailyMsg=()=>{
+    let msg=`*🍞 Bob's Baked Co. — Daily Check-in*\n*${today}*\n\n`;
+    MEMBERS.forEach(mem=>{
+      const daily=tasks.filter(t=>t.m===mem.id&&t.freq==='daily');
+      if(!daily.length)return;
+      msg+=`*${mem.name}*\n`;
+      daily.forEach(t=>{msg+=`  ${t.done?'✅':'⬜'} ${t.title}\n`;});
+      msg+='\n';
+    });
+    if(overdue.length){
+      msg+=`⚠️ *Still overdue — needs attention:*\n`;
+      overdue.forEach(t=>{const mem=MEMBERS.find(m=>m.id===t.m);msg+=`  • ${mem?.name}: ${t.title}\n`;});
+      msg+='\n';
+    }
+    msg+=`_Reply with your name + ✅ when done._\n_Missed tasks = −5 pts._`;
+    return msg;
+  };
+
+  const weeklyMsg=()=>{
+    let msg=`*🍞 Bob's Baked Co. — Weekly Wrap*\n*Week ending ${today}*\n\n`;
+    MEMBERS.forEach(mem=>{
+      const wt=tasks.filter(t=>t.m===mem.id&&t.freq==='weekly');
+      if(!wt.length)return;
+      const done=wt.filter(t=>t.done).length;
+      const pct=wt.length>0?Math.round(done/wt.length*100):0;
+      const icon=pct===100?'🟢':pct>=50?'🟡':'🔴';
+      msg+=`${icon} *${mem.name}* — ${done}/${wt.length} weekly tasks\n`;
+    });
+    if(overdue.length){
+      msg+=`\n⚠️ *Overdue (${overdue.length}):*\n`;
+      overdue.forEach(t=>{const mem=MEMBERS.find(m=>m.id===t.m);msg+=`  • ${mem?.name}: ${t.title}\n`;});
+    }
+    msg+=`\n_Please update the board before EOD Friday._\n_Swati assigns next week's tasks by Monday 10 AM._`;
+    return msg;
+  };
+
+  el.innerHTML=`
+    <div class="info-box" style="margin-bottom:12px">
+      <span class="info-icon">📋</span>
+      <span>Swati sends the daily message at <strong>9 AM</strong>. Follow up at <strong>6 PM</strong> for anyone who hasn't replied. Send the weekly wrap every <strong>Friday evening</strong>.</span>
+    </div>
+    <div class="wa-box">
+      <div class="wa-head">
+        <div>
+          <div class="wa-label">Daily morning message</div>
+          <div class="wa-sub">All 7 members · send at 9 AM</div>
+        </div>
+        <button class="wa-copy" onclick="cpTxt('daily-msg')">Copy</button>
+      </div>
+      <div class="wa-msg" id="daily-msg">${dailyMsg()}</div>
+    </div>
+    <div class="wa-box">
+      <div class="wa-head">
+        <div>
+          <div class="wa-label">Weekly wrap</div>
+          <div class="wa-sub">Send every Friday evening</div>
+        </div>
+        <button class="wa-copy" onclick="cpTxt('weekly-msg')">Copy</button>
+      </div>
+      <div class="wa-msg" id="weekly-msg">${weeklyMsg()}</div>
+    </div>
+    <div class="info-box" style="margin-top:10px;margin-bottom:0">
+      <span class="info-icon">ℹ️</span>
+      <span><strong>Chinmaya</strong> sends EOD summary to Roshan daily. Roshan escalates if needed. Pratik reviews Chinmaya's weekly report independently.<br><br><strong>Kiran</strong> checks in with the group. Lagna reviews all of Kiran's outputs before they go live.</span>
+    </div>
+  `;
+}
+
+function cpTxt(id){
+  const txt=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Copied! 📋')).catch(()=>{
+    const el=document.getElementById(id);
+    const range=document.createRange();range.selectNode(el);
+    window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+    toast('Select all + copy manually');
+  });
+}
+
+loadState();
+</script>
+</body>
+</html>
